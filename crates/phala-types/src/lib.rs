@@ -236,6 +236,16 @@ pub mod messaging {
         }
     }
 
+    // Bind on-chain GuessNumberCommand message to the GUESS_NUMBER contract
+    bind_contract32!(GuessNumberCommand, contract::GUESS_NUMBER);
+    #[derive(Debug, Clone, Encode, Decode)]
+    pub enum GuessNumberCommand {
+        /// Refresh the random number
+        NextRandom,
+        /// Set the contract owner
+        SetOwner { owner: AccountId },
+    }
+
     /// A fixed point number with 64 integer bits and 64 fractional bits.
     pub type U64F64Bits = u128;
 

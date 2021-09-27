@@ -377,6 +377,11 @@ impl<Platform: pal::Platform> Phactory<Platform> {
                 contracts::GEOLOCATION,
                 contracts::geolocation::Geolocation::new()
             );
+
+            install_contract!(
+                contracts::GUESS_NUMBER,
+                contracts::guess_number::GuessNumber::new()
+            );
         }
 
         let mut runtime_state = RuntimeState {

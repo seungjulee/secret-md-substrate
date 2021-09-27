@@ -20,9 +20,11 @@ pub mod substrate_kitties;
 pub mod web3analytics;
 pub mod geolocation;
 
+pub mod guess_number;
+
 pub use phala_types::contract::*;
 
-fn account_id_from_hex(s: &str) -> Result<AccountId> {
+pub fn account_id_from_hex(s: &str) -> Result<AccountId> {
     let bytes = hex::decode(s)
         .map_err(Error::msg)
         .context("Failed to decode AccountId hex")?;

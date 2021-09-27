@@ -15,6 +15,7 @@ pub const DIEM: ContractId32 = 5;
 pub const SUBSTRATE_KITTIES: ContractId32 = 6;
 pub const BTC_LOTTERY: ContractId32 = 7;
 pub const GEOLOCATION: ContractId32 = 8;
+pub const GUESS_NUMBER: ContractId32 = 100;
 
 /// Contract query request parameters, to be encrypted.
 #[derive(Encode, Decode, Debug)]
