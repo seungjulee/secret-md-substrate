@@ -145,7 +145,7 @@ impl contracts::NativeContract for SubstrateKitties {
     // Handles the commands from transactions on the blockchain. This method doesn't respond.
     fn handle_command(
         &mut self,
-        context: &NativeContext,
+        context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Self::Cmd,
     ) -> TransactionResult {

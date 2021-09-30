@@ -260,7 +260,7 @@ impl contracts::NativeContract for DataPlaza {
 
     fn handle_command(
         &mut self,
-        _context: &NativeContext,
+        _context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Self::Cmd,
     ) -> TransactionResult {

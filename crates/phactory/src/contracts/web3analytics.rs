@@ -892,7 +892,7 @@ impl contracts::NativeContract for Web3Analytics {
 
     fn handle_command(
         &mut self,
-        _context: &NativeContext,
+        _context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Self::Cmd,
     ) -> TransactionResult {

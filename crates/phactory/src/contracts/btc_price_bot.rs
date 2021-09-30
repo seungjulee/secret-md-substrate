@@ -113,7 +113,7 @@ impl contracts::NativeContract for BtcPriceBot {
     /// Handle the Commands from transactions on the blockchain. This method doesn't respond.
     fn handle_command(
         &mut self,
-        context: &NativeContext,
+        context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Command,
     ) -> TransactionResult {

@@ -45,14 +45,14 @@ mod support {
         pub block: &'a mut BlockInfo<'a>,
     }
 
-    pub struct NativeContext<'a> {
-        pub block: &'a mut BlockInfo<'a>,
+    pub struct NativeContext<'a, 'b> {
+        pub block: &'a mut BlockInfo<'b>,
         mq: &'a MessageChannel,
         #[allow(unused)] // TODO.kevin: remove this.
         secret_mq: SecretMessageChannel<'a>,
     }
 
-    impl NativeContext<'_> {
+    impl NativeContext<'_, '_> {
         pub fn mq(&self) -> &MessageChannel {
             self.mq
         }
@@ -76,7 +76,7 @@ mod support {
         fn id(&self) -> ContractId32;
         fn handle_command(
             &mut self,
-            _context: &NativeContext,
+            _context: &mut NativeContext,
             _origin: MessageOrigin,
             _cmd: Self::Cmd,
         ) -> TransactionResult {
@@ -154,7 +154,7 @@ mod support {
             Ok(response.encode())
         }
 
-        fn process_messages<'a>(&'a mut self, env: &mut ExecuteEnv<'a>) {
+        fn process_messages(&mut self, env: &mut ExecuteEnv) {
             let storage = env.block.storage;
             let key_map = |topic: &[u8]| {
                 // TODO.kevin: query contract pubkey for contract topic's when the feature in GK is available.
@@ -164,7 +164,7 @@ mod support {
                     .flatten()
             };
             let secret_mq = SecretMessageChannel::new(&self.ecdh_key, &self.send_mq, &key_map);
-            let context = NativeContext {
+            let mut context = NativeContext {
                 block: env.block,
                 mq: &self.send_mq,
                 secret_mq,
@@ -173,7 +173,7 @@ mod support {
                 let ok = phala_mq::select! {
                     next_cmd = self.cmd_rcv_mq => match next_cmd {
                         Ok((_, cmd, origin)) => {
-                            let _status = self.contract.handle_command(&context, origin, cmd);
+                            let _status = self.contract.handle_command(&mut context, origin, cmd);
                         }
                         Err(e) => {
                             error!("Read command failed [{}]: {:?}", self.id(), e);

@@ -329,7 +329,7 @@ impl contracts::NativeContract for BtcLottery {
 
     fn handle_command(
         &mut self,
-        context: &NativeContext,
+        context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Self::Cmd,
     ) -> TransactionResult {

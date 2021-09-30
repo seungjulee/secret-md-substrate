@@ -69,7 +69,7 @@ impl contracts::NativeContract for Balances {
 
     fn handle_command(
         &mut self,
-        context: &NativeContext,
+        context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Command,
     ) -> TransactionResult {

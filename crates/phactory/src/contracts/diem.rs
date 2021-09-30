@@ -520,7 +520,7 @@ impl contracts::NativeContract for Diem {
 
     fn handle_command(
         &mut self,
-        _context: &NativeContext,
+        _context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: PushCommand<Self::Cmd>,
     ) -> TransactionResult {

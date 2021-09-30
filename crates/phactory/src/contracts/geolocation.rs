@@ -68,7 +68,7 @@ impl contracts::NativeContract for Geolocation {
 
     fn handle_command(
         &mut self,
-        context: &NativeContext,
+        context: &mut NativeContext,
         origin: MessageOrigin,
         cmd: Command,
     ) -> TransactionResult {
