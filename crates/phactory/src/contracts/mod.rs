@@ -22,6 +22,8 @@ pub mod geolocation;
 
 pub mod guess_number;
 
+pub mod btc_price_bot;
+
 pub use phala_types::contract::*;
 
 pub fn account_id_from_hex(s: &str) -> Result<AccountId> {
@@ -40,11 +42,11 @@ mod support {
     use crate::types::BlockInfo;
 
     pub struct ExecuteEnv<'a> {
-        pub block: &'a BlockInfo<'a>,
+        pub block: &'a mut BlockInfo<'a>,
     }
 
     pub struct NativeContext<'a> {
-        pub block: &'a BlockInfo<'a>,
+        pub block: &'a mut BlockInfo<'a>,
         mq: &'a MessageChannel,
         #[allow(unused)] // TODO.kevin: remove this.
         secret_mq: SecretMessageChannel<'a>,
@@ -63,7 +65,7 @@ mod support {
             origin: Option<&chain::AccountId>,
             req: OpaqueQuery,
         ) -> Result<OpaqueReply, OpaqueError>;
-        fn process_messages(&mut self, env: &mut ExecuteEnv);
+        fn process_messages<'a>(&'a mut self, env: &mut ExecuteEnv<'a>);
     }
 
     pub trait NativeContract {
@@ -152,7 +154,7 @@ mod support {
             Ok(response.encode())
         }
 
-        fn process_messages(&mut self, env: &mut ExecuteEnv) {
+        fn process_messages<'a>(&'a mut self, env: &mut ExecuteEnv<'a>) {
             let storage = env.block.storage;
             let key_map = |topic: &[u8]| {
                 // TODO.kevin: query contract pubkey for contract topic's when the feature in GK is available.

@@ -246,6 +246,21 @@ pub mod messaging {
         SetOwner { owner: AccountId },
     }
 
+    bind_contract32!(BtcPriceBotCommand, contract::BTC_PRICE_BOT);
+    #[derive(Debug, Clone, Encode, Decode)]
+    pub enum BtcPriceBotCommand {
+        /// Set the contract owner
+        SetOwner { owner: AccountId },
+        /// Set the authentication token of telegram bot
+        /// refer to: https://core.telegram.org/bots/api#authorizing-your-bot
+        SetBotToken { token: String },
+        /// Set the identifier to target chat
+        /// refer to: https://core.telegram.org/bots/api#sendmessage
+        SetChatId { chat_id: String },
+        /// Let the Tg bot to report the current BTC price
+        ReportBtcPrice,
+    }
+
     /// A fixed point number with 64 integer bits and 64 fractional bits.
     pub type U64F64Bits = u128;
 

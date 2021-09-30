@@ -382,6 +382,11 @@ impl<Platform: pal::Platform> Phactory<Platform> {
                 contracts::GUESS_NUMBER,
                 contracts::guess_number::GuessNumber::new()
             );
+
+            install_contract!(
+                contracts::BTC_PRICE_BOT,
+                contracts::btc_price_bot::BtcPriceBot::new()
+            );
         }
 
         let mut runtime_state = RuntimeState {
@@ -726,7 +731,7 @@ impl<Platform: pal::Platform> Phactory<Platform> {
             return Err(from_display("System process events failed"));
         }
 
-        let mut env = ExecuteEnv { block: &block };
+        let mut env = ExecuteEnv { block: &mut block };
 
         for contract in state.contracts.values_mut() {
             contract.process_messages(&mut env);
