@@ -1,5 +1,4 @@
 use anyhow::Result;
-use futures::executor::block_on;
 use log::info;
 use parity_scale_codec::{Decode, Encode};
 use phala_mq::MessageOrigin;
@@ -12,7 +11,6 @@ use super::{TransactionError, TransactionResult};
 use crate::contracts;
 use crate::contracts::{AccountId, NativeContext};
 use crate::side_task::async_side_task::AsyncSideTask;
-use crate::side_task::SideTaskManager;
 extern crate runtime as chain;
 
 use phala_types::messaging::BtcPriceBotCommand;
@@ -73,23 +71,6 @@ struct TgMessage {
     text: String,
 }
 
-async fn tg_send_message_request(
-    bot_token: String,
-    chat_id: String,
-    text: String,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let uri = format!(
-        "https://api.telegram.org/bot{}/{}",
-        bot_token, "sendMessage"
-    );
-    let data = &TgMessage { chat_id, text };
-
-    let mut res = surf::post(uri).body_json(data)?.await?;
-    // assert_eq!(res.status(), 200);
-
-    Ok(())
-}
-
 /// The BTC price from https://min-api.cryptocompare.com
 #[derive(Deserialize, Serialize, Debug)]
 struct BtcPrice {
@@ -134,17 +115,11 @@ impl contracts::NativeContract for BtcPriceBot {
                 self.owner = AccountId::from(*owner.as_fixed_bytes());
                 Ok(())
             }
-            Command::SetBotToken { token } => {
+            Command::SetupBot { token, chat_id } => {
                 if sender != alice && sender != self.owner {
                     return Err(TransactionError::BadOrigin);
                 }
                 self.bot_token = token;
-                Ok(())
-            }
-            Command::SetChatId { chat_id } => {
-                if sender != alice && sender != self.owner {
-                    return Err(TransactionError::BadOrigin);
-                }
                 self.chat_id = chat_id;
                 Ok(())
             }
@@ -161,7 +136,7 @@ impl contracts::NativeContract for BtcPriceBot {
                 let task = AsyncSideTask::spawn(
                     block_number,
                     duration,
-                    async {
+                    async move {
                         // Do network request in this block and return the result.
                         // Do NOT send mq message in this block.
                         log::info!("Side task starts to get BTC price");
@@ -183,17 +158,36 @@ impl contracts::NativeContract for BtcPriceBot {
                             }
                         };
                         log::info!("Side task got BTC price: {}", result);
-                        result
-                    },
-                    move |result, _context| {
-                        let result = result.unwrap_or("Timed out".into());
+
                         let price: BtcPrice =
                             serde_json::from_str(result.as_str()).expect("broken BTC price result");
-
                         let text = format!("BTC price: ${}", price.usd);
-                        let future = tg_send_message_request(bot_token, chat_id, text);
-                        let _ = block_on(future);
+                        let uri = format!(
+                            "https://api.telegram.org/bot{}/{}",
+                            bot_token, "sendMessage"
+                        );
+                        let data = &TgMessage { chat_id, text };
+
+                        let mut resp = match surf::post(uri)
+                            .body_json(data)
+                            .expect("should not fail with valid data; qed.")
+                            .await
+                        {
+                            Ok(r) => r,
+                            Err(err) => {
+                                return format!("Network error: {:?}", err);
+                            }
+                        };
+                        let result = match resp.body_string().await {
+                            Ok(body) => body,
+                            Err(err) => {
+                                format!("Network error: {:?}", err)
+                            }
+                        };
+                        log::info!("Side task sent BTC price: {}", result);
+                        result
                     },
+                    |_result, _context| {},
                 );
                 context.block.side_task_man.add_task(task);
 

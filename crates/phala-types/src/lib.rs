@@ -251,12 +251,9 @@ pub mod messaging {
     pub enum BtcPriceBotCommand {
         /// Set the contract owner
         SetOwner { owner: AccountId },
-        /// Set the authentication token of telegram bot
-        /// refer to: https://core.telegram.org/bots/api#authorizing-your-bot
-        SetBotToken { token: String },
-        /// Set the identifier to target chat
-        /// refer to: https://core.telegram.org/bots/api#sendmessage
-        SetChatId { chat_id: String },
+        /// Set the authentication token of telegram bot (https://core.telegram.org/bots/api#authorizing-your-bot) and
+        /// the identifier to target chat (https://core.telegram.org/bots/api#sendmessage)
+        SetupBot { token: String, chat_id: String },
         /// Let the Tg bot to report the current BTC price
         ReportBtcPrice,
     }
