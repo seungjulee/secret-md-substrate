@@ -177,7 +177,7 @@ impl contracts::NativeContract for GuessNumber {
                 }
             }
             Request::PeekRandomNumber => {
-                // also, we only allow Alice of contract owner to peek the number
+                // also, we only allow Alice or contract owner to peek the number
                 let sender = origin.ok_or(Error::OriginUnavailable)?;
                 let alice = contracts::account_id_from_hex(ALICE)
                     .expect("should not failed with valid address; qed.");
