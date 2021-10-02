@@ -17,6 +17,21 @@ use phala_types::messaging::BtcPriceBotCommand;
 
 type Command = BtcPriceBotCommand;
 
+/// Contract Overview
+///
+/// This contract show the ability of Phala contracts to send HTTP request with `AsyncSideTask`.
+///
+/// We recommend first to read about asynchronous programming in Rust <https://rust-lang.github.io/async-book/> since our
+/// `AsyncSideTask` follows the same manner.
+///
+/// For now, you cannot use `tokio`-based HTTP crate since it is not compatible in SGX. Read more about the details in our
+/// PR <https://github.com/Phala-Network/phala-blockchain/pull/483> for the reason why.
+///
+/// For more side task demos, visit <https://github.com/Phala-Network/phala-blockchain/tree/side-task-demo1> and
+/// <https://github.com/Phala-Network/phala-blockchain/tree/side-task-demo2>.
+///
+/// For the basic functionalities of contract, refer to `guess_number.rs`.
+
 pub struct BtcPriceBot {
     owner: AccountId,
     bot_token: String,
@@ -130,9 +145,19 @@ impl contracts::NativeContract for BtcPriceBot {
 
                 let bot_token = self.bot_token.clone();
                 let chat_id = self.chat_id.clone();
-                // Report the result after 2 blocks no matter whether has received the http response
-                let duration = 2;
+
+                // This Command triggers the use of `AsyncSideTask`, it first send a HTTP request to get the current BTC
+                // price from https://min-api.cryptocompare.com/, then sends the price to a Telegram bot through another
+                // HTTP request
+                //
+                // To ensure the state consistency, the time to start the task and the time to upload the HTTP response
+                // to chain must be determined. In this case, we start the task in the current `block_number`, and report
+                // the result, whether succeeded or failed, to the chain after `duration`
+                //
+                // Report the result after 2 blocks no matter whether has received the HTTP response
                 let block_number = context.block.block_number;
+                let duration = 2;
+
                 let task = AsyncSideTask::spawn(
                     block_number,
                     duration,
@@ -187,7 +212,10 @@ impl contracts::NativeContract for BtcPriceBot {
                         log::info!("Side task sent BTC price: {}", result);
                         result
                     },
-                    |_result, _context| {},
+                    |_result, _context| {
+                        // You can send deterministic number of transactions in the result process
+                        // In this case, we don't send the price since it has already been reported to the TG bot above
+                    },
                 );
                 context.block.side_task_man.add_task(task);
 

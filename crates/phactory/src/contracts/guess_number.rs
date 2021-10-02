@@ -25,6 +25,8 @@ use phala_types::messaging::GuessNumberCommand;
 ///
 /// The Queries are not allowed to change the state of contract. They are directly sent to contract through the local rpc
 /// endpoint. Since they are off-chain requests, they can be sent and then real-time processed.
+///
+/// For the advanced usage of HTTP request in contract, refer to `btc_price_bot.rs`.
 
 /// The Commands to this contract
 ///
@@ -51,7 +53,7 @@ pub enum Request {
     QueryOwner,
     /// Make a guess on the number
     Guess { guess_number: RandomNumber },
-    /// Peek random number (this should only be used by contract owner)
+    /// Peek random number (this should only be used by contract owner or root account)
     PeekRandomNumber,
 }
 
@@ -85,6 +87,9 @@ impl GuessNumber {
     }
 
     /// Generate random number using on-chain block height
+    ///
+    /// As mentioned above, off-chain random generation can break the state consistency across multiple instances of the
+    /// same contract
     pub fn gen_random_number(context: &NativeContext) -> RandomNumber {
         let hash = hashing::blake2_256(&context.block.block_number.to_be_bytes());
         u32::from_be_bytes(
@@ -109,6 +114,12 @@ impl contracts::NativeContract for GuessNumber {
     }
 
     /// Handle the Commands from transactions on the blockchain. This method doesn't respond.
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - The current block info with the necessary egress channel
+    /// * `origin` - The sender of the Command, can be Pallet, pRuntime, Contract, Account or even entities from other chain
+    /// * `cmd` - The on-chain Command to process
     fn handle_command(
         &mut self,
         context: &mut NativeContext,
@@ -142,7 +153,12 @@ impl contracts::NativeContract for GuessNumber {
         }
     }
 
-    // Handle a direct Query and respond to it. It shouldn't modify the contract state.
+    /// Handle a direct Query and respond to it. It shouldn't modify the contract state.
+    ///
+    /// # Arguments
+    ///
+    /// * `origin` - For off-chain Query, the sender can only be AccountId
+    /// * `req` — Off-chain Query to handle
     fn handle_query(
         &mut self,
         origin: Option<&chain::AccountId>,
