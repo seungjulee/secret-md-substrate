@@ -121,3 +121,17 @@ the _current_ rustc.
 - [phala-docker](https://github.com/Phala-Network/phala-docker): The production dockerfiles, including the blockchain, pherry, and pRuntime.
 - [Code Bounty Program](https://forum.phala.network/t/topic/2045)
 - [Responsible Disclosure](./docs/responsible-disclosure.md)
+
+## Quick Run Note
+
+```bash
+vagrant ssh -- -L 9944:127.0.0.1:9944
+
+./target/release/phala-node --dev --tmp
+
+source /opt/intel/sgxsdk/environment
+cd ./standalone/pruntime/bin
+./app
+
+./target/release/pherry --dev --no-wait
+```
