@@ -1,6 +1,6 @@
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::format;
 use codec::{Decode, Encode};
 
 pub use phala_mq::{contract_id256 as id256, ContractId};
@@ -17,6 +17,7 @@ pub const BTC_LOTTERY: ContractId32 = 7;
 pub const GEOLOCATION: ContractId32 = 8;
 pub const GUESS_NUMBER: ContractId32 = 100;
 pub const BTC_PRICE_BOT: ContractId32 = 101;
+pub const PASTEBIN: ContractId32 = 420;
 
 /// Contract query request parameters, to be encrypted.
 #[derive(Encode, Decode, Debug)]
@@ -75,5 +76,7 @@ impl From<ContractQueryError> for prpc::server::Error {
 }
 
 pub fn command_topic(id: ContractId) -> Vec<u8> {
-    format!("phala/contract/{}/command", hex::encode(&id)).as_bytes().to_vec()
+    format!("phala/contract/{}/command", hex::encode(&id))
+        .as_bytes()
+        .to_vec()
 }

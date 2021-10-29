@@ -258,6 +258,16 @@ pub mod messaging {
         ReportBtcPrice,
     }
 
+    // Bind on-chain PastebinCommand message to the PASTEBIN contract
+    bind_contract32!(PastebinCommand, contract::PASTEBIN);
+    #[derive(Debug, Clone, Encode, Decode)]
+    pub enum PastebinCommand {
+        /// Refresh the random number
+        NextRandom,
+        /// Set the contract owner
+        SetOwner { owner: AccountId },
+    }
+
     /// A fixed point number with 64 integer bits and 64 fractional bits.
     pub type U64F64Bits = u128;
 

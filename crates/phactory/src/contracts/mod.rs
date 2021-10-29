@@ -1,8 +1,8 @@
 use crate::secret_channel::{
     storage_prefix_for_topic_pubkey, KeyPair, Peeler, PeelingReceiver, SecretMessageChannel,
 };
-use std::fmt::Debug;
 use std::convert::TryFrom as _;
+use std::fmt::Debug;
 
 use crate::system::{TransactionError, TransactionResult};
 use crate::types::{deopaque_query, OpaqueError, OpaqueQuery, OpaqueReply};
@@ -16,13 +16,15 @@ pub mod balances;
 pub mod btc_lottery;
 pub mod data_plaza;
 // pub mod diem;
+pub mod geolocation;
 pub mod substrate_kitties;
 pub mod web3analytics;
-pub mod geolocation;
 
 pub mod guess_number;
 
 pub mod btc_price_bot;
+
+pub mod pastebin;
 
 pub use phala_types::contract::*;
 
