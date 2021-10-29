@@ -42,9 +42,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.network "forwarded_port", guest: 30333, host: 30333
 
     # frontend
-    config.vm.network "forwarded_port", guest: 8001, host: 8001
+    # config.vm.network "forwarded_port", guest: 8001, host: 8001
     # config.vm.network "forwarded_port", guest: 19944, host: 19944
-    config.vm.network "forwarded_port", guest: 3000, host: 3000
+    # config.vm.network "forwarded_port", guest: 3000, host: 3000
 
 
     config.vm.synced_folder ".", "/vagrant", type: "virtualbox"

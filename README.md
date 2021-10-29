@@ -125,7 +125,7 @@ the _current_ rustc.
 ## Quick Run Note
 
 ```bash
-vagrant ssh -- -L 9944:127.0.0.1:9944
+vagrant ssh -- -L 9944:127.0.0.1:9944 -L 8000:127.0.0.1:8000
 
 ./target/release/phala-node --dev --tmp
 
