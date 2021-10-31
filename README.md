@@ -1,4 +1,5 @@
 # 🥷  SecretMD
+![./SecretMD_Screenshot_Write.png](./SecretMD_Screenshot_Write.png)
 # Product Intro
 ### What is it?
 SecretMD is a rich text editor which allows users to store and share any plain text file onto a distributed and confidential [Phala blockchain](https://phala.network/en/) in [Polkadot ecosystem](https://polkadot.network/).
