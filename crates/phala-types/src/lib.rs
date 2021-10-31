@@ -266,8 +266,11 @@ pub mod messaging {
         CreatePost {
             id: String,
             owner: AccountId,
+            is_private: bool,
             readable_by: AccountId,
+            // readable_by: Vec<AccountId>,
             content: String,
+            title: String,
         },
     }
 

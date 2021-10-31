@@ -40,6 +40,8 @@ type PostId = String;
 
 type PostContent = String;
 
+type PostTitle = String;
+
 type CreateOn = u64;
 
 fn now() -> u64 {
@@ -56,12 +58,11 @@ pub struct Post {
     id: PostId,
     content: PostContent,
     owner: AccountId,
-    /// TODO: change this with array
-    readable_by: AccountId,
+    is_private: bool,
+    readable_by: AccountId, //Vec<H256>, /// FIXME: cannot infer accountid on command
     created_on: CreateOn,
+    title: PostTitle,
 }
-
-// impl codec::WrapperTypeEncode for Post {}
 
 /// Contract state
 #[derive(Debug, Default)]
@@ -140,21 +141,45 @@ impl contracts::NativeContract for Pastebin {
             Command::CreatePost {
                 id,
                 owner,
+                is_private,
                 readable_by,
                 content,
+                title,
             } => {
+                log::info!("id: {:?}, owner: {:?}, is_private: {:?}, readable_by: {:?}, content: {:?}, title: {:?} ", id, owner, is_private, readable_by, content, title);
                 if self.post_by_id.contains_key(&id) {
                     return Err(TransactionError::IdExists);
                 }
 
+                // let mut mut_readable_by = Vec::new();
+
+                // for u in readable_by {
+                //     mut_readable_by.push(H256::from(*u.as_fixed_bytes()))
+                // }
+
+                // let data = &mut_readable_by;
+                // let immut_readable_by = &*data;
+
                 let post = Post {
                     id: id.clone(),
                     owner: AccountId::from(*owner.as_fixed_bytes()),
+                    is_private: is_private,
                     readable_by: AccountId::from(*readable_by.as_fixed_bytes()),
+                    // readable_by: immut_readable_by.to_vec(), //AccountId::from(*readable_by.as_fixed_bytes()),
                     content: content,
                     created_on: now(),
+                    title: title,
                 };
+                log::info!("Post: {:?}", post);
                 self.post_by_id.insert(id.clone(), post);
+                match self.post_by_id.get(&id) {
+                    Some(post) => {
+                        info!("Query received - Create - Post: {:?}", post);
+                    },
+                    None => {
+                        info!("Query received - Create - Post notfound",);
+                    }
+                }
                 Ok(())
             }
         }
@@ -181,12 +206,19 @@ impl contracts::NativeContract for Pastebin {
 
                 match self.post_by_id.get(&id) {
                     Some(post) => {
-                        if sender != &post.owner || sender != &post.readable_by {
-                            return Err(Error::NotAuthorized);
+                        info!("Query received - Read - Post: {:?}", post.clone());
+
+                        if !post.is_private || sender == &post.owner || sender == &post.readable_by {
+                            return Ok(Response::Post(post.clone()))
                         }
-                        return Ok(Response::Post(post.clone()))
+                        // for u in &post.readable_by {
+                        //     if sender.to_string() == u.to_string() {
+                        //         return Ok(Response::Post(post.clone()))
+                        //     }
+                        // }
+                        return Err(Error::NotAuthorized);
                     },
-                    None => return Err(Error::NotAuthorized)
+                    None => return Err(Error::NotFound)
                 }
             }
         }
