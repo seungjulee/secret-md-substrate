@@ -262,10 +262,13 @@ pub mod messaging {
     bind_contract32!(PastebinCommand, contract::PASTEBIN);
     #[derive(Debug, Clone, Encode, Decode)]
     pub enum PastebinCommand {
-        /// Refresh the random number
-        NextRandom,
-        /// Set the contract owner
-        SetOwner { owner: AccountId },
+        /// Create Post
+        CreatePost {
+            id: String,
+            owner: AccountId,
+            readable_by: AccountId,
+            content: String,
+        },
     }
 
     /// A fixed point number with 64 integer bits and 64 fractional bits.

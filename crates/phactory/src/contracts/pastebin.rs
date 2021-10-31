@@ -35,12 +35,38 @@ use phala_types::messaging::PastebinCommand;
 /// They can change the state of the contract, with no responses.
 type Command = PastebinCommand;
 
-type RandomNumber = u32;
+type PostId = String;
+
+type PostContent = String;
+
+type CreateOn = u64;
+
+fn now() -> u64 {
+    use std::time::SystemTime;
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    now.as_secs()
+}
+
+// Post state for each bin
+#[derive(Encode, Decode, Debug, Clone, Default)]
+pub struct Post {
+    id: PostId,
+    content: PostContent,
+    owner: AccountId,
+    /// TODO: change this with array
+    readable_by: AccountId,
+    created_on: CreateOn,
+}
+
+// impl codec::WrapperTypeEncode for Post {}
 
 /// Contract state
+#[derive(Encode, Decode, Debug, Clone, Default)]
 pub struct Pastebin {
-    owner: AccountId,
-    random_number: RandomNumber,
+    /// TODO: change this with Vector and add index
+    post: Post,
 }
 
 /// The Queries to this contract
@@ -49,27 +75,14 @@ pub struct Pastebin {
 /// They should not change the contract state.
 #[derive(Encode, Decode, Debug, Clone)]
 pub enum Request {
-    /// Query the current owner of the contract
-    QueryOwner,
-    /// Make a guess on the number
-    Guess { guess_number: RandomNumber },
-    /// Peek random number (this should only be used by contract owner or root account)
-    PeekRandomNumber,
-}
-
-#[derive(Encode, Decode, Debug, Clone)]
-pub enum GuessResult {
-    TooLarge,
-    TooSmall,
-    Correct,
+    /// Query the content of pastebin
+    QueryPost,
 }
 
 /// The Query results
 #[derive(Encode, Decode, Debug, Clone)]
 pub enum Response {
-    Owner(AccountId),
-    GuessResult(GuessResult),
-    RandomNumber(RandomNumber),
+    Post(Post),
 }
 
 #[derive(Encode, Decode, Debug)]
@@ -81,22 +94,8 @@ pub enum Error {
 impl Pastebin {
     pub fn new() -> Self {
         Pastebin {
-            owner: Default::default(),
-            random_number: Default::default(),
+            post: Default::default(),
         }
-    }
-
-    /// Generate random number using on-chain block height
-    ///
-    /// As mentioned above, off-chain random generation can break the state consistency across multiple instances of the
-    /// same contract
-    pub fn gen_random_number(context: &NativeContext) -> RandomNumber {
-        let hash = hashing::blake2_256(&context.block.block_number.to_be_bytes());
-        u32::from_be_bytes(
-            hash[..4]
-                .try_into()
-                .expect("should never failed with corrent array length; qed."),
-        )
     }
 }
 
@@ -136,18 +135,29 @@ impl contracts::NativeContract for Pastebin {
         let alice = contracts::account_id_from_hex(ALICE)
             .expect("should not failed with valid address; qed.");
         match cmd {
-            Command::NextRandom => {
-                if sender != alice && sender != self.owner {
-                    return Err(TransactionError::BadOrigin);
-                }
-                self.random_number = Pastebin::gen_random_number(context);
-                Ok(())
-            }
-            Command::SetOwner { owner } => {
+            Command::CreatePost {
+                id,
+                owner,
+                readable_by,
+                content,
+            } => {
+                println!(
+                    "owner: {}, readable_by: {}, content: {}",
+                    owner, readable_by, content
+                );
                 if sender != alice {
                     return Err(TransactionError::BadOrigin);
                 }
-                self.owner = AccountId::from(*owner.as_fixed_bytes());
+                // let my_uuid = Uuid::new_v4()?;
+                //     println!("{}", my_uuid.to_simple().to_string());
+                let post = Post {
+                    id: id,
+                    owner: AccountId::from(*owner.as_fixed_bytes()),
+                    readable_by: AccountId::from(*readable_by.as_fixed_bytes()),
+                    content: content,
+                    created_on: now(),
+                };
+                self.post = post;
                 Ok(())
             }
         }
@@ -166,27 +176,19 @@ impl contracts::NativeContract for Pastebin {
     ) -> Result<Response, Error> {
         info!("Query received: {:?}", &req);
         match req {
-            Request::QueryOwner => Ok(Response::Owner(self.owner.clone())),
-            Request::Guess { guess_number } => {
-                if guess_number > self.random_number {
-                    Ok(Response::GuessResult(GuessResult::TooLarge))
-                } else if guess_number < self.random_number {
-                    Ok(Response::GuessResult(GuessResult::TooSmall))
-                } else {
-                    Ok(Response::GuessResult(GuessResult::Correct))
-                }
-            }
-            Request::PeekRandomNumber => {
+            Request::QueryPost => {
                 // also, we only allow Alice or contract owner to peek the number
                 let sender = origin.ok_or(Error::OriginUnavailable)?;
                 let alice = contracts::account_id_from_hex(ALICE)
                     .expect("should not failed with valid address; qed.");
 
-                if sender != &alice && sender != &self.owner {
+                if sender != &alice && sender != &self.post.readable_by {
                     return Err(Error::NotAuthorized);
                 }
 
-                Ok(Response::RandomNumber(self.random_number))
+                let post = self.post.clone();
+
+                Ok(Response::Post(post))
             }
         }
     }

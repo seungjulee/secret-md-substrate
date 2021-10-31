@@ -17,7 +17,10 @@ pub trait Sealing {
 
 pub trait RA {
     type Error: ErrorType;
-    fn create_attestation_report(&self, data: &[u8]) -> Result<(String, String, String), Self::Error>;
+    fn create_attestation_report(
+        &self,
+        data: &[u8],
+    ) -> Result<(String, String, String), Self::Error>;
 }
 
 pub struct MemoryUsage {
