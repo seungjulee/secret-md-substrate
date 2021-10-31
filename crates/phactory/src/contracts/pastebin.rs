@@ -4,6 +4,7 @@ use parity_scale_codec::{Decode, Encode};
 use phala_mq::MessageOrigin;
 use sp_core::hashing;
 use std::convert::TryInto;
+use std::collections::HashMap;
 
 use super::{TransactionError, TransactionResult};
 use crate::contracts;
@@ -63,10 +64,10 @@ pub struct Post {
 // impl codec::WrapperTypeEncode for Post {}
 
 /// Contract state
-#[derive(Encode, Decode, Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct Pastebin {
     /// TODO: change this with Vector and add index
-    post: Post,
+    post_by_id: HashMap<PostId, Post>,
 }
 
 /// The Queries to this contract
@@ -76,7 +77,7 @@ pub struct Pastebin {
 #[derive(Encode, Decode, Debug, Clone)]
 pub enum Request {
     /// Query the content of pastebin
-    QueryPost,
+    QueryPost { id: PostId },
 }
 
 /// The Query results
@@ -89,12 +90,13 @@ pub enum Response {
 pub enum Error {
     OriginUnavailable,
     NotAuthorized,
+    NotFound,
 }
 
 impl Pastebin {
     pub fn new() -> Self {
         Pastebin {
-            post: Default::default(),
+            post_by_id: HashMap::new(),
         }
     }
 }
@@ -141,23 +143,18 @@ impl contracts::NativeContract for Pastebin {
                 readable_by,
                 content,
             } => {
-                println!(
-                    "owner: {}, readable_by: {}, content: {}",
-                    owner, readable_by, content
-                );
-                if sender != alice {
-                    return Err(TransactionError::BadOrigin);
+                if self.post_by_id.contains_key(&id) {
+                    return Err(TransactionError::IdExists);
                 }
-                // let my_uuid = Uuid::new_v4()?;
-                //     println!("{}", my_uuid.to_simple().to_string());
+
                 let post = Post {
-                    id: id,
+                    id: id.clone(),
                     owner: AccountId::from(*owner.as_fixed_bytes()),
                     readable_by: AccountId::from(*readable_by.as_fixed_bytes()),
                     content: content,
                     created_on: now(),
                 };
-                self.post = post;
+                self.post_by_id.insert(id.clone(), post);
                 Ok(())
             }
         }
@@ -176,19 +173,21 @@ impl contracts::NativeContract for Pastebin {
     ) -> Result<Response, Error> {
         info!("Query received: {:?}", &req);
         match req {
-            Request::QueryPost => {
-                // also, we only allow Alice or contract owner to peek the number
-                let sender = origin.ok_or(Error::OriginUnavailable)?;
-                let alice = contracts::account_id_from_hex(ALICE)
-                    .expect("should not failed with valid address; qed.");
-
-                if sender != &alice && sender != &self.post.readable_by {
-                    return Err(Error::NotAuthorized);
+            Request::QueryPost { id } => {
+                if !self.post_by_id.contains_key(&id) {
+                    return Err(Error::NotFound);
                 }
+                let sender = origin.ok_or(Error::OriginUnavailable)?;
 
-                let post = self.post.clone();
-
-                Ok(Response::Post(post))
+                match self.post_by_id.get(&id) {
+                    Some(post) => {
+                        if sender != &post.owner || sender != &post.readable_by {
+                            return Err(Error::NotAuthorized);
+                        }
+                        return Ok(Response::Post(post.clone()))
+                    },
+                    None => return Err(Error::NotAuthorized)
+                }
             }
         }
     }

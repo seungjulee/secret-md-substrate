@@ -57,6 +57,8 @@ pub enum TransactionError {
     FailedToCalculateBalance,
     BadChainId,
     TransferringNotAllowed,
+    // for pastebin
+    IdExists,
 }
 
 impl From<BadOrigin> for TransactionError {
