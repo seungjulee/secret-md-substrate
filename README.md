@@ -1,137 +1,94 @@
-# Phala Blockchain
+# 🥷  SecretMD
+# Product Intro
+### What is it?
+SecretMD is a rich text editor which allows users to store and share any plain text file onto a distributed and confidential [Phala blockchain](https://phala.network/en/) in [Polkadot ecosystem](https://polkadot.network/).
 
-<img align="right" width="320" src="docs/static/web3 foundation_grants_badge_black.svg" alt="Funded by the web3 foundation">
+### When to use it?
+**Privacy**
+- Share a secret message to someone
+- Securely save your important personal information
+- A more private way than sending a [PGP](https://en.wikipedia.org/wiki/Pretty_Good_Privacy)  encryption email without any need of email or PGP keys
 
-![Rust](https://github.com/Phala-Network/phala-blockchain/workflows/Build/badge.svg)
+**Storage**
+- Store information FOREVER on a decentralized blockchain
 
-Phala Network is a blockchain-based confidential computing cloud. This repo includes:
 
-- `node/`: the main blockchain built on Substrate
-- `standalone/pherry/`: the message relayer to connect the blockchain and pRuntime
-- `standalone/pruntime/`: the contract execution kernel running inside TEE enclave
+### Why use it?
+#### End to end encryption using Polkadot wallet
+**No Extra Key Required** - Without any need of a separate set of encryption key like [PGP](https://en.wikipedia.org/wiki/Pretty_Good_Privacy), SecretMD requires only a Polkadot wallet for encryption/decryption. 
 
-## Overview
+**No need for password** -Unlike [Pastebin.com](https://pastebin.com/), encryption does not require a password to encrypt or decrypt a file.
 
-![](docs/static/phala-design.png)
+#### Decentralized storage #### 
+Unlike [Pastebin.com](https://pastebin.com/) which stores the encrypted file on a centralized server which is susceptible for lost, SecretMD stores the file on Phala blockchain.
 
-The **blockchain** is the central component of the system. It records commands (confidential contract invocation), serves as the pRuntime registry, runs the native token and on-chain governance modules.
+#### Hardware level End to End encryption
+From Phala's [Intro to Confidential Contract](https://wiki.phala.network/en-us/docs/developer/#introduction-to-confidential-contract)
+> By leveraging Trusted Execution Environment (TEE), which is powered by secure hardware, Phala supports confidential contracts, which are just like ordinary smart contracts but their input and states are encrypted and protected by hardware. 
 
-**pherry** is the message relayer. It connects the blockchain and pRuntime. It passes the block data from the chain to pRuntime and passes pRuntime side effects back to the chain. A multi-client version of the runtime bridge is being developed [here](https://github.com/Phala-Network/runtime-bridge) and now in alpha version.
+## Development
 
-**pRuntime** (Phala Network Secure Enclave Runtime) is a runtime to execute confidential smart contracts, based on confidential computing.
+### Technical Overview
 
-## Native Build
+### Development
+Follow [Tutorial from Phala](https://wiki.phala.network/en-us/docs/developer/run-a-local-development-network/) to set up local development environment.
 
-### Dependencies
+#### Client
+##### Environment Variables
 
-<details><summary>Expand</summary>
+> **Note**: This step is **necessary** because backend services are required.
 
-- Rust
-
-  ```bash
-  curl https://sh.rustup.rs -sSf | sh
-  ```
-
-- Substrate dependencies:
-
-   ```bash
-   git submodule update --init
-   sh ./scripts/init.sh
-   ```
-
-- LLVM 10
-
-  ```bash
-  wget https://apt.llvm.org/llvm.sh
-  chmod +x llvm.sh
-  ./llvm.sh 10
-  ```
-
-</details>
-
-### Build the blockchain and bridge
-
-Make sure you have Rust and LLVM-10 installed.
-
-> Note for Mac users: you also need `llvm` and `binutils` from Homebrew or MacPort, and to add their binaries to your $PATH
+You can use environment variables to set prpc base url and ws provider endpoint:
 
 ```bash
-cargo build --release
+cp .env .env.local
 ```
 
-The build script enforces LLVM-10 or newer is used. LLVM-10 is needed because of the wasm port of rust
-crypto library, `ring`. We have to compile the C code into wasm while keeping the compatibility with
-the _current_ rustc.
+Then edit `.env.local`, for example:
 
-## Run
+```plain
+NEXT_PUBLIC_BASE_URL=http://0.0.0.0:8001
+NEXT_PUBLIC_WS_ENDPOINT=ws://0.0.0.0:19944
+```
 
-1. Launch a dev node:
-
-    ```bash
-    ./target/release/phala-node --dev
-    ```
-
-    - Can be purged by `./target/release/phala-node purge-chain <args like --dev>`
-    - The [Polkadot.js UI](https://polkadot.js.org/apps) can connect to the node at port 9944.
-
-2. Compile & launch pRuntime
-
-    Read `docs/sgx.md`, *Install SDK* section, to determine how to install the Intel SGX PSW & SDK.
-    If not using Docker, you may need the following final steps:
-
-    ```bash
-    sudo mkdir /opt/intel
-    sudo ln -s /opt/sgxsdk /opt/intel/sgxsdk
-    sudo pip install meson ninja
-    ```
-
-    Run `make` (`SGX_MODE=SW make` for simulation mode if you don't have the hardware).
-
-    ```bash
-    cd standalone/pruntime
-    SGX_MODE=SW make
-    ```
-
-    Apply for Remote Attestation API keys at
-    [Intel IAS service](https://api.portal.trustedservices.intel.com/EPID-attestation). The SPID must be linkable. Then put the hex
-    key in plain text files (`spid.txt` and `key.txt`) and put them into `bin/`.
-
-    Finally, run pRuntime:
-    ```bash
-    cd bin/
-    ./app
-    ```
-
-3. Run pherry (node and pRuntime required):
-
-    ```bash
-    ./target/release/pherry --dev
-    ```
-
-4. Web UI (TODO: still being refactored)
-
-## Sub-pages
-
-- [RPC](./docs/rpc.md): RPC documentations
-- [Test](./docs/test.md): How to test the components
-
-## External Resources
-
-- [phala-wiki](https://github.com/Phala-Network/phala-wiki): The technical documentation.
-- [phala-docker](https://github.com/Phala-Network/phala-docker): The production dockerfiles, including the blockchain, pherry, and pRuntime.
-- [Code Bounty Program](https://forum.phala.network/t/topic/2045)
-- [Responsible Disclosure](./docs/responsible-disclosure.md)
-
-## Quick Run Note
+##### Getting Started
 
 ```bash
+yarn
+yarn dev
+```
+Open [http://localhost:3000](http://localhost:3000).
+
+#### Server
+It requires three different binaries to be executed in order.
+
+From [Phala Blockchain in Detail](https://wiki.phala.network/en-us/docs/developer/blockchain-in-detail/)
+> 
+    phala-node: The Substrate-based blockchain node
+    pRuntime: The TEE runtime. Contracts run in pRuntime
+    pherry: The Substrate-TEE bridge relayer. Connects the blockchain and pRuntime
+
+
+#####  Building and running Phala blockchain
+Refer to [README_Phala](./README_Phala.md) for details.
+
+If running on a VM, make sure to bind the 9944 WebSocket port.
+```bash
 vagrant ssh -- -L 9944:127.0.0.1:9944 -L 8000:127.0.0.1:8000
+```
 
+1. Run phala-node
+```bash
 ./target/release/phala-node --dev --tmp
-
+```
+2. Run pRuntime
+```bash
 source /opt/intel/sgxsdk/environment
 cd ./standalone/pruntime/bin
 ./app
-
+```
+3. Run pherry
+```bash
 ./target/release/pherry --dev --no-wait
 ```
+
